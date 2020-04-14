@@ -1,38 +1,48 @@
 import tkinter as tk
-
-class Main_Window:
-
-    def __init__(self, master):
-        self.master = master
-        self.frame = tk.Frame(self.master)
-        self.button1 = tk.Button(self.frame, text="Hello")
-        self.button1.grid(column=0, row=0)
-        self.button2 = tk.Button(self.frame, text="World")
-        self.button2.grid(column=1, row=0)
-        self.button3 = tk.Button(self.frame, text="Test")
-        self.button3.grid(column=2, row=0)
-        self.master.title("Garage Helper")
-        self.master.geometry('800x700')
+import sys, inspect
 
 
+#The Selection_Menu code was derived from this tutorial
+#https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
+class Selection_Menu(tk.Tk):
+    is_tool = False
+    def __init__(self):
+        tk.Tk.__init__(self)
+        container = tk.Frame(self)
+
+        container.pack()
+
+        self.frames = {}
+
+        frame = Welcome(container, self)
+        self.frames[Welcome] = frame
+        frame.pack()
+
+        self.show_frame(Welcome)
+
+    def show_frame(self, cont):
+        frame = self.frames[cont]
+        frame.tkraise()
+
+class Welcome(tk.Frame):
+    is_tool = True
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self,parent)
+        label = tk.Label(self, text="Welcome Page")
+        label.pack()
+
+app = Selection_Menu()
+#app.mainloop()
+
+#get a list of all classes in the module
+classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+
+#sort out the name of each class and its attribute of is_tool
+#used for getting all tools automaticaly
+for cls in classes:
+    print(cls[0])
+    print(eval(cls[0]).is_tool)
 
 
-        self.frame.pack()
 
-class Testing:
-    def __init__(self, master):
-        self.master = master
-        self.frame = tk.Frame(self.master)
-        self.button1 = tk.Button(self.frame, text="Testing")
-        self.button1.grid(column=0, row=0)
-        self.button2 = tk.Button(self.frame, text="Again")
-        self.button2.grid(column=1, row=0)
-        self.button3 = tk.Button(self.frame, text="Tested")
-        self.button3.grid(column=2, row=0)
-        self.frame.pack()
-
-root = tk.Tk()
-app = Main_Window(root)
-app2 = Testing(root)
-
-root.mainloop()
+#print(inspect.getmembers(Selection_Menu))
