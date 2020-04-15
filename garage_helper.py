@@ -2,9 +2,9 @@ import tkinter as tk
 import sys, inspect
 
 
-#The Selection_Menu code was derived from this tutorial
+#The Control code was derived from this tutorial
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
-class Selection_Menu(tk.Tk):
+class Control(tk.Tk):
     is_tool = False
     def __init__(self):
         tk.Tk.__init__(self)
@@ -24,15 +24,23 @@ class Selection_Menu(tk.Tk):
         frame = self.frames[cont]
         frame.tkraise()
 
-class Welcome(tk.Frame):
-    is_tool = True
+class Selection_Menu(tk.Frame):
+    is_tool = False
     def __init__(self, parent, controller):
         tk.Frame.__init__(self,parent)
+        label = tk.Label(self, text="Selection_Menu Page")
+        label.pack()
+
+#class Welcome(tk.Frame):
+class Welcome(Selection_Menu, tk.Frame):
+    is_tool = True
+    def __init__(self, parent, controller):
+        super().__init__(parent,controller)
         label = tk.Label(self, text="Welcome Page")
         label.pack()
 
-app = Selection_Menu()
-#app.mainloop()
+app = Control()
+app.mainloop()
 
 #get a list of all classes in the module
 classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
@@ -45,4 +53,4 @@ for cls in classes:
 
 
 
-#print(inspect.getmembers(Selection_Menu))
+#print(inspect.getmembers(Control))
