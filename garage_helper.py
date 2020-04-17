@@ -1,22 +1,19 @@
 import tkinter as tk
 import sys, inspect
 
-#returns a list of dicts for each class in this module with attribute is_tool = True
+#returns int max_tool_width, int max_tool height, and a list of dicts for each class in this module with attribute is_tool = True
 #dicts contain "name": the exact name of the class, "obj": the object itself, "nice_name": used for labeling buttons etc.
 def find_all_tools():
     #get a list of all classes in the module
     classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
 
     #sort out the name of each class and its attribute of is_tool
-    #returns
-    tool_classes = [] #??? change to dict with class, name, and nice name ???
+    tool_classes = []
+    max_tool_width = 0
+    max_tool_height = 0
     for cls in classes:
         temp_obj = eval(cls[0])
 
-        #string name of class
-        print(cls[0])
-        #class attribute is_tool
-        print(temp_obj.is_tool)
         if temp_obj.is_tool:
             info = {
                 "name" : cls[0],
@@ -25,8 +22,16 @@ def find_all_tools():
             }
             tool_classes.append(info)
 
-    print(tool_classes)
-    return tool_classes
+            #find largest width
+            if temp_obj.tool_width > max_tool_width:
+                max_tool_width = temp_obj.tool_width
+
+            #find largest height
+            if temp_obj.tool_height > max_tool_height:
+                max_tool_height = temp_obj.tool_height
+
+    print("max tool width: " + str(max_tool_width))
+    return max_tool_width, max_tool_height, tool_classes
 
 #The Control code was derived from this tutorial
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
@@ -59,49 +64,59 @@ class Control(tk.Tk):
         frame = self.frames[cont]
         frame.tkraise()
 
+#######################################
+#should make this its own frame so the buttons are not tied to the rows/cols of tools
+###################################################################
 class Selection_Menu(tk.Frame):
     is_tool = False
     def __init__(self, parent, controller):
         tk.Frame.__init__(self,parent)
-        label = tk.Label(self, text="Selection_Menu Page")
-        label.pack()
 
-        #TODO set the buttons to auto allocate as many as tools
-                                                                        #TODO change Test_tool to automatic from selections
-        button = tk.Button(self, text=selections[0]["nice_name"], command= lambda: controller.show_frame(Test_Tool))
-        button.pack()
 
-        button1 = tk.Button(self, text=selections[1]["nice_name"], command= lambda: controller.show_frame(Test_Two))
-        button1.pack()
-#class Welcome(tk.Frame):
+        #create a button for each "tool" class in this module
+        buttons = []
+        for i in range(len(selections)):
+            #the use of j = i lambda is to differentiate which lambda to use so the correct screen is called
+            new_button = tk.Button(self, text=selections[i]["nice_name"], command = lambda j = i: controller.show_frame(selections[j]["obj"]))
+            new_button.grid(row=1, column=i)
+
 class Welcome(Selection_Menu, tk.Frame):
     is_tool = False
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
         label = tk.Label(self, text="Welcome Page")
-        label.pack()
+        label.grid(row=2, column=0)
 
 class Test_Tool(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Test Tool"
+    tool_width = 400
+    tool_height = 200
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
         label = tk.Label(self, text="Test Tool Page")
-        label.pack()
+        label.grid(row=2, column=0)
 
 class Test_Two(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Test Tool 2"
+    tool_width = 500
+    tool_height = 500
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
         label = tk.Label(self, text="Test 2 Tool Page")
-        label.pack()
+        label.grid(row=2, column=0)
 
 
-selections = find_all_tools()
-print(selections)
-print(type(selections))
+
+
+
+
+#find all classes in this module
+max_tool_width, max_tool_height, selections = find_all_tools()
 
 #launch the app
 app = Control()
+geo = str(max_tool_width) + "x" + str(max_tool_height)
+app.geometry(geo)
 app.mainloop()
