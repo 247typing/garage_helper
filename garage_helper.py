@@ -1,5 +1,8 @@
 import tkinter as tk
 import sys, inspect
+import os
+from PIL import Image, ImageTk
+import pathlib
 
 #returns int max_tool_width, int max_tool height, and a list of dicts for each class in this module with attribute is_tool = True
 #dicts contain "name": the exact name of the class, "obj": the object itself, "nice_name": used for labeling buttons etc.
@@ -52,7 +55,7 @@ def check_entry(entry):
         solution = "ERROR"
     else:
         print("empty")
-    return solution
+    return "ERROR"
 
 #The Control code was derived from this tutorial
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
@@ -129,24 +132,43 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Drill Tap Chart"
     tool_width = 400
-    tool_height = 200
+    tool_height = 1000
+
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
-        tool_frame = tk.Frame(self)
-        tool_frame.grid(row = 1, column = 0)
+        self.tool_frame = tk.Frame(self)
+        self.tool_frame.grid(row = 1, column = 0)
 
-        label = tk.Label(tool_frame, text=self.nice_name, font=DEFAULT_TOOL_FONT)
-        label.grid(row=0, column=0)
+        label = tk.Label(self.tool_frame, text=self.nice_name, font=TOOL_TITLE_FONT)
+        label.grid(row=0, column=1)
 
-        self.tap_dia_entry = tk.Entry(tool_frame, font=DEFAULT_TOOL_FONT)
-        self.tap_dia_entry.grid(row=1, column=0)
+        label = tk.Label(self.tool_frame, text="Pitch (as TPI)", font=DEFAULT_TOOL_FONT)
+        label.grid(row=1, column=1)
 
-        self.tap_TPI_entry = tk.Entry(tool_frame, font=DEFAULT_TOOL_FONT)
-        self.tap_TPI_entry.grid(row=1, column=1)
+        self.tap_TPI_entry = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=4)
+        self.tap_TPI_entry.grid(row=2, column=1)
 
-        calc_button = tk.Button(tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.get_entries)
-        calc_button.grid(row=2, column=0)
+        label = tk.Label(self.tool_frame, text="Major Diameter", font=DEFAULT_TOOL_FONT)
+        label.grid(row=4, column=0)
 
+        self.tap_dia_entry = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=7)
+        self.tap_dia_entry.grid(row=5, column=0)
+
+        screw_image = Image.open("images\\Drill_Tap_Chart\\input_image.png")
+        photo = ImageTk.PhotoImage(screw_image)
+        label = tk.Label(self.tool_frame, image=photo)
+        label.image = photo
+        label.grid(row=4, column=1, rowspan=3, pady=15)
+
+        screw_plate = Image.open("images\\Drill_Tap_Chart\\hole_sizes.png")
+        photo = ImageTk.PhotoImage(screw_plate)
+        label = tk.Label(self.tool_frame, image=photo)
+        label.image = photo
+        label.grid(row=7, column=0, columnspan=3, pady=15)
+
+
+        calc_button = tk.Button(self.tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.get_entries)
+        calc_button.grid(row=10, column=2)
 
     def get_entries(self):
         print(self.tap_dia_entry.get())
@@ -155,10 +177,36 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         tap_dia = check_entry(self.tap_dia_entry.get())
         if tap_dia == "ERROR":
             pass #change to popup message indicating error
-        
+
         #clear the text in the boxes
         self.tap_dia_entry.delete(0, 'end')
         self.tap_TPI_entry.delete(0, 'end')
+
+        #######Needs a grid forget used in a clear function ########################'
+        #might be able to use self.label_X to forget "hide" each one or might try destroy
+        label_1 = tk.Label(self.tool_frame, text="Used: ", font=DEFAULT_TOOL_FONT)
+        label_1.grid(row=3, column=1)
+        
+        label = tk.Label(self.tool_frame, text="Used: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=6, column=0)
+
+        label = tk.Label(self.tool_frame, text="Actual: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=8, column=0)
+
+        label = tk.Label(self.tool_frame, text="Actual: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=8, column=1)
+
+        label = tk.Label(self.tool_frame, text="Actual: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=8, column=2)
+
+        label = tk.Label(self.tool_frame, text="Closest: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=9, column=0)
+
+        label = tk.Label(self.tool_frame, text="Closest: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=9, column=1)
+
+        label = tk.Label(self.tool_frame, text="Closest: ", font=DEFAULT_TOOL_FONT)
+        label.grid(row=9, column=2)
 
 
 class Test_Two(Selection_Menu, tk.Frame):
@@ -170,20 +218,22 @@ class Test_Two(Selection_Menu, tk.Frame):
         super().__init__(parent,controller)
         tool_frame = tk.Frame(self)
         tool_frame.grid(row = 1, column = 0)
-        label = tk.Label(tool_frame, text="Test 2 Tool Page", font=DEFAULT_TOOL_FONT)
+        label = tk.Label(tool_frame, text="Test 2 Tool Page", font=TOOL_TITLE_FONT)
         label.grid(row=2, column=0)
 
 #TODO needs to be moved to a config file #####################
 BUTTON_FONT = ("arial", 18)
 DEFAULT_TOOL_FONT = ("arial", 16)
-
+TOOL_TITLE_FONT = ("arial bold", 24)
 
 
 #find all classes in this module
 max_tool_width, max_tool_height, selections = find_all_tools()
 
+
 #launch the app
 app = Control()
 geo = str(max_tool_width) + "x" + str(max_tool_height)
+print(geo)
 app.geometry(geo)
 app.mainloop()
