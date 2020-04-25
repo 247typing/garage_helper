@@ -3,6 +3,7 @@ import sys, inspect
 import os
 from PIL import Image, ImageTk
 import pathlib
+import pandas as pd
 
 #returns int max_tool_width, int max_tool height, and a list of dicts for each class in this module with attribute is_tool = True
 #dicts contain "name": the exact name of the class, "obj": the object itself, "nice_name": used for labeling buttons etc.
@@ -151,8 +152,8 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         label = tk.Label(self.tool_frame, text="Major Diameter", font=DEFAULT_TOOL_FONT)
         label.grid(row=4, column=0)
 
-        self.tap_dia_entry = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=7)
-        self.tap_dia_entry.grid(row=5, column=0)
+        self.major_dia_entry = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=7)
+        self.major_dia_entry.grid(row=5, column=0)
 
         screw_image = Image.open("images\\Drill_Tap_Chart\\input_image.png")
         photo = ImageTk.PhotoImage(screw_image)
@@ -167,47 +168,102 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         label.grid(row=7, column=0, columnspan=3, pady=15)
 
 
-        calc_button = tk.Button(self.tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.get_entries)
-        calc_button.grid(row=10, column=2)
+        calc_button = tk.Button(self.tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.calculate)
+        calc_button.grid(row=10, column=2, sticky="w")
 
-    def get_entries(self):
-        print(self.tap_dia_entry.get())
+        clear_button = tk.Button(self.tool_frame, text="Clear", font=DEFAULT_TOOL_FONT, command=self.clear_calc)
+        clear_button.grid(row=10, column=1, sticky="e")
+    def calculate(self):
+        print(self.major_dia_entry.get())
         print(self.tap_TPI_entry.get())
+        TPI = self.tap_TPI_entry.get()
+        #check the entered string is an integer
+        if TPI.isdigit():
+            try:
+                TPI = int(self.tap_TPI_entry.get())
+            except ValueError:
+                TPI = "ERROR"
+        else:
+            TPI = "ERROR"
 
-        tap_dia = check_entry(self.tap_dia_entry.get())
-        if tap_dia == "ERROR":
-            pass #change to popup message indicating error
+        #check dia entry for ints, floats, or fractions
+        major_dia = check_entry(self.major_dia_entry.get())
 
+        if major_dia == "ERROR" or TPI == "ERROR":
+            #################################TODO popup message #######################################
+            print("ERROR") #change to popup message indicating error then return
+            return
+        else:
+            pitch = 1 / TPI
+            tap_drill = major_dia - pitch
+
+            #round to one thousands of an inch
+            ########add min and max to precentages##################################
+
+            #3% clearance
+            tight_drill = major_dia*1.03
+            #8% clearance
+            loose_drill = major_dia*1.08
+
+
+            tap_bit = self.find_drill(tap_drill)
+            tight_bit = self.find_drill(tight_drill)
+            loose_bit = self.find_drill(loose_drill)
+
+            #format for output
+            tight_drill = "{:.3f}".format(round(tight_drill, 3))
+            loose_drill = "{:.3f}".format(round(loose_drill, 3))
+            major_dia = "{:.3f}".format(round(major_dia, 3))
+            pitch = "{:.3f}".format(round(pitch, 3))
+            tap_drill = "{:.3f}".format(round(tap_drill, 3))
+
+
+
+        self.labels = [] #this list contains all of the labels for the solution
+        #this allows for labels to be appended and easily destroyed later to clear the screen
+        self.labels.append(tk.Label(self.tool_frame, text="Used: "+pitch+'"', font=DEFAULT_TOOL_FONT))
+        #assign the last label a position
+        self.labels[-1].grid(row=3, column=1)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Used: "+major_dia+'"', font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=6, column=0)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+tap_drill+'"', font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=8, column=0)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+tight_drill+'"', font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=8, column=1)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+loose_drill+'"', font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=8, column=2)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+tap_bit, font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=9, column=0)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+tight_bit, font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=9, column=1)
+
+        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+loose_bit, font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=9, column=2)
+
+    def clear_calc(self):
         #clear the text in the boxes
-        self.tap_dia_entry.delete(0, 'end')
+        self.major_dia_entry.delete(0, 'end')
         self.tap_TPI_entry.delete(0, 'end')
 
-        #######Needs a grid forget used in a clear function ########################'
-        #might be able to use self.label_X to forget "hide" each one or might try destroy
-        label_1 = tk.Label(self.tool_frame, text="Used: ", font=DEFAULT_TOOL_FONT)
-        label_1.grid(row=3, column=1)
-        
-        label = tk.Label(self.tool_frame, text="Used: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=6, column=0)
+        #clear all of the label from calculate
+        for label in self.labels:
+            label.destroy()
 
-        label = tk.Label(self.tool_frame, text="Actual: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=8, column=0)
+    #takes the drill size and returns the next largest bit size from the csv file
+    def find_drill(self, size):
+        ######## add a drop down with metric / standard drill bit set ##################
 
-        label = tk.Label(self.tool_frame, text="Actual: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=8, column=1)
+        df = pd.read_csv(os.path.join(*["static_data", "Drill_Tap_Chart", "english_drill_sizes.csv"]))
 
-        label = tk.Label(self.tool_frame, text="Actual: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=8, column=2)
-
-        label = tk.Label(self.tool_frame, text="Closest: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=9, column=0)
-
-        label = tk.Label(self.tool_frame, text="Closest: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=9, column=1)
-
-        label = tk.Label(self.tool_frame, text="Closest: ", font=DEFAULT_TOOL_FONT)
-        label.grid(row=9, column=2)
-
+        for index, row in df.iterrows():
+            if size < row["dia_in"]:
+                return row["bit"]
 
 class Test_Two(Selection_Menu, tk.Frame):
     is_tool = True
