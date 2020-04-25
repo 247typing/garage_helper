@@ -1,0 +1,29 @@
+Drill Tap Chart
+This tool is used to calculate drill bit size for a specified tap. It also
+calculates drill bit sizes for close fit clearance and free fit clearance holes.
+
+Major Diameter:
+Enter the major diameter or outside diameter of the screw (screw peak to peak).
+Acceptable formats are:
+    Integer such as "1" for a 1 in bolt
+    Decimal numbers such as "0.250" or ".25" for a 1/4 in bolt
+    Fractions such as "1/4" or "13/64"
+    Mixed numbers such as "1 1/2" for 1.5 in bolt (note the space between 1 and 1/2)
+    Numbered sized such as "#4" or "#10" for a 4-40 or 10-32 machine screw
+
+Pitch (as TPI):
+Enter the pitch in the form of TPI or Threads per Inch. This will be converted
+to a true pitch and displayed for your information.
+
+Calculations
+Tap drill size:
+This is determined using the equation (major dia - pitch). This is then rounded
+and the next largest drill bit is the closest bit.
+
+Close Fit Clearance:
+This is determined using the equation (major dia * 1.03) for a 3% larger hole
+than the major diameter.
+
+Free Fit Clearance:
+This is determined using the equation (major dia * 1.08) for a 8% larger hole
+than the major diameter.
