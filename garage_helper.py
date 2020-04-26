@@ -37,6 +37,49 @@ def find_all_tools():
     print("max tool width: " + str(max_tool_width))
     return max_tool_width, max_tool_height, tool_classes
 
+#This method takes a single entry and performs basic error checking and division
+#accepted inputs are integers, floats, and fractions with '/' character, as well as mixed numbers
+#where an interger is spearated by a space from a fraction ex: 1 1/2 = 1.5
+#returns float if acceptable other wise returns "ERROR"
+def check_entry(entry):
+    #check if entry is empty
+    if entry:
+        #try to convert to float directly
+        try:
+            solution = float(entry)
+            return solution
+        except ValueError:
+            #check for '#' character indicating a screw size
+            if "#" in entry:
+                #search screw_dia.csv for match and return float dia 0.XXX format
+                df = pd.read_csv(os.path.join(*["static_data", "Drill_Tap_Chart", "number_dia.csv"]))
+                entry = df.loc[df.screw_num == entry, "dia_in"].iloc[0]
+                float("{:.3f}".format(round(entry,3)))
+                return entry
+            elif "/" in entry:
+                whole_num = 0 #initialize whole_num to zero to handle the case of fraction less than 1
+                if " " in entry: #the case of mixed numbers
+                    seperate = entry.split(' ')
+                    if len(seperate) == 2:
+                        try: #if first number is not able to convert to float its an error
+                            whole_num = float(seperate[0])
+                        except ValueError:
+                            return "ERROR"
+                        entry = seperate[1]
+
+                #if that doesn't work, check for single '/' indicating division
+                fraction = entry.split('/')
+                if len(fraction) == 2:
+                    solution = float(fraction[0]) / float(fraction[1])
+                    return solution + whole_num
+                else:
+                    return "ERROR"
+            else:
+                return "ERROR"
+    else:
+        print("empty")
+    return "ERROR"
+
 #The Control code was derived from this tutorial
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
 class Control(tk.Tk):
@@ -111,8 +154,8 @@ class Welcome(Selection_Menu, tk.Frame):
 class Drill_Tap_Chart(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Drill Tap Chart"
-    tool_width = 400
-    tool_height = 1000
+    tool_width = 620
+    tool_height = 650
 
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
@@ -166,7 +209,7 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
             TPI = "ERROR"
 
         #check dia entry for ints, floats, or fractions
-        major_dia = self.check_entry(self.major_dia_entry.get())
+        major_dia = check_entry(self.major_dia_entry.get())
 
         if major_dia == "ERROR" or TPI == "ERROR":
             #################################TODO popup message #######################################
@@ -255,54 +298,13 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         #to handle the case of not large enough drill bit
         return "N/A"
 
-    #This method takes a single entry and performs basic error checking and division
-    #accepted inputs are integers, floats, and fractions with '/' character, as well as mixed numbers
-    #where an interger is spearated by a space from a fraction ex: 1 1/2 = 1.5
-    #returns float if acceptable other wise returns "ERROR"
-    def check_entry(self, entry):
-        #check if entry is empty
-        if entry:
-            #try to convert to float directly
-            try:
-                solution = float(entry)
-                return solution
-            except ValueError:
-                #check for '#' character indicating a screw size
-                if "#" in entry:
-                    #search screw_dia.csv for match and return float dia 0.XXX format
-                    df = pd.read_csv(os.path.join(*["static_data", "Drill_Tap_Chart", "number_dia.csv"]))
-                    entry = df.loc[df.screw_num == entry, "dia_in"].iloc[0]
-                    float("{:.3f}".format(round(entry,3)))
-                    return entry
-                elif "/" in entry:
-                    whole_num = 0 #initialize whole_num to zero to handle the case of fraction less than 1
-                    if " " in entry: #the case of mixed numbers
-                        seperate = entry.split(' ')
-                        if len(seperate) == 2:
-                            try: #if first number is not able to convert to float its an error
-                                whole_num = float(seperate[0])
-                            except ValueError:
-                                return "ERROR"
-                            entry = seperate[1]
 
-                    #if that doesn't work, check for single '/' indicating division
-                    fraction = entry.split('/')
-                    if len(fraction) == 2:
-                        solution = float(fraction[0]) / float(fraction[1])
-                        return solution + whole_num
-                    else:
-                        return "ERROR"
-                else:
-                    return "ERROR"
-        else:
-            print("empty")
-        return "ERROR"
 
 class Lathe_Speeds(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Lathe Feeds and Speeds"
-    tool_width = 800
-    tool_height = 500
+    tool_width = 620
+    tool_height = 560
 
     speeds_df = pd.read_csv(os.path.join(*["static_data", "Lathe_Speeds", "cutting_speeds.csv"]))
     def __init__(self, parent, controller):
@@ -311,20 +313,75 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
         self.tool_frame.grid(row = 1, column = 0)
 
         label = tk.Label(self.tool_frame, text=self.nice_name, font=TOOL_TITLE_FONT)
-        label.grid(row=0, column=1)
+        label.grid(row=0, column=0, columnspan=2)
 
         label = tk.Label(self.tool_frame, text="Select Material", font=DEFAULT_TOOL_FONT)
-        label.grid(row=1, column=0)
+        label.grid(row=1, column=0, columnspan=2)
 
         materials = self.speeds_df["material"].tolist()
 
-        selected_mat = tk.StringVar(self.tool_frame)
-        selected_mat.set(materials[1])
+        self.selected_mat = tk.StringVar(self.tool_frame)
+        self.selected_mat.set(materials[1])
 
-        drop_down = tk.OptionMenu(self.tool_frame, selected_mat, *materials)
-        drop_down.grid(row=2, column=0)
+        drop_down = tk.OptionMenu(self.tool_frame, self.selected_mat, *materials)
+        drop_down.configure(font=DEFAULT_TOOL_FONT)
+        drop_down.grid(row=2, column=0, columnspan=2)
 
+        chuck_image = Image.open(os.path.join(*["images", "Lathe_Speeds", "lathe_chuck.png" ]))
+        chuck_image = chuck_image.resize((300,300), Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(chuck_image)
+        label = tk.Label(self.tool_frame, image=photo)
+        label.image = photo
+        label.grid(row=3, column=0, rowspan=3, pady=15)
 
+        label = tk.Label(self.tool_frame, text="Enter Material Diameter", font=DEFAULT_TOOL_FONT)
+        label.grid(row=3, column=1, sticky="s")
+
+        self.material_dia = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=4)
+        self.material_dia.grid(row=4, column=1, sticky="n")
+
+        calc_button = tk.Button(self.tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.calculate)
+        calc_button.grid(row=7, column=1, sticky="w")
+
+        clear_button = tk.Button(self.tool_frame, text="Clear", font=DEFAULT_TOOL_FONT, command=self.clear_all)
+        clear_button.grid(row=7, column=0, sticky="e")
+
+    def calculate(self):
+        mat_dia = check_entry(self.material_dia.get())
+        print(mat_dia)
+        material = self.selected_mat.get()
+        print(material)
+        df = pd.read_csv(os.path.join(*["static_data", "Lathe_Speeds", "cutting_speeds.csv"]))
+        cutting_speed = df.loc[df["material"] == material, "surface_feet_per_min"].iloc[0]
+        RPM = (cutting_speed * 12) / (3.14 * mat_dia)
+
+        mat_dia = "{:.3f}".format(round(mat_dia, 3))
+        RPM = str(int(round(RPM)))
+
+        self.clear_calc() #prevent multiple layers from building up
+        self.labels = []
+
+        self.labels.append(tk.Label(self.tool_frame, text="Diameter Used: "+mat_dia+'"', font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=5, column=1, sticky="n")
+
+        self.labels.append(tk.Label(self.tool_frame, text="Calculated RPM: "+RPM, font=DEFAULT_TOOL_FONT))
+        self.labels[-1].grid(row=6, column=0)
+
+    def clear_all(self):
+        self.clear_calc()
+        self.clear_entry()
+
+    def clear_calc(self):
+        try: #handles first clear if no lables created
+            #clear all of the label from calculate
+            for label in self.labels:
+                label.destroy()
+        except AttributeError:
+            return
+
+    def clear_entry(self):
+        #clear the text in the boxes
+        self.material_dia.delete(0, 'end')
 
 #TODO needs to be moved to a config file #####################
 BUTTON_FONT = ("arial", 18)
