@@ -111,6 +111,46 @@ class Control(tk.Tk):
         frame = self.frames[cont]
         frame.tkraise()
 
+"""
+class Popup(tk.Toplevel):
+    is_tool = False
+
+    def __init__(self):
+        tk.Toplevel.__init__(self)
+"""
+
+class Popup(tk.Tk):
+    is_tool = False
+
+    def __init__(self, input, is_file=False):
+        tk.Tk.__init__(self)
+        print(input)
+        #file name passed as input so display text file
+        #The files first line should be the title and will be treated as such
+        if is_file:
+            with open(input, 'r') as f:
+                lines = f.readlines()
+                heading = lines[0].split('\n')[0] #remove the newline char
+                self.title(heading)
+                label = tk.Label(self, text=heading, font=TOOL_TITLE_FONT)
+                label.grid(row=0, column=0)
+
+                #print all lines from line 2 to end of the help file
+                for i in range(len(lines) - 1):
+                    label = tk.Label(self, text=lines[i + 1].split('\n')[0], font=DEFAULT_TOOL_FONT)
+                    label.grid(row=i + 1, column=0, sticky='w')
+            i = i + 1; #increment i for button to have correct row
+
+
+        else:
+            i = 0 #i is used for button row determination
+            label = tk.Label(self, text=input, font=DEFAULT_TOOL_FONT)
+            label.grid(row=i, column=0, pady = 10, padx = 10)
+            self.title("Popup")
+
+        button = tk.Button(self, text = "Close", font=BUTTON_FONT, command=self.destroy)
+        button.grid(row=i+1, column=0, pady = 10)
+
 #This is a special class that contains the top frame that contains buttons to select tools
 class Selection_Menu(tk.Frame):
     is_tool = False
@@ -398,4 +438,10 @@ app = Control()
 geo = str(max_tool_width) + "x" + str(max_tool_height)
 print(geo)
 app.geometry(geo)
+
+#test popups
+app1 = Popup(os.path.join(*["tool_help", "Drill_Tap_Chart.txt"]), is_file=True)
+app2 = Popup("This is a test and can be used to show error messages", is_file=False)
+app1.lift()
+#end test popups
 app.mainloop()
