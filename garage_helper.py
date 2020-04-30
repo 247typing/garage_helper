@@ -84,6 +84,7 @@ def check_entry(entry):
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
 class Control(tk.Tk):
     is_tool = False
+    top_frame = None
     def __init__(self):
         tk.Tk.__init__(self)
         container = tk.Frame(self)
@@ -109,16 +110,13 @@ class Control(tk.Tk):
 
     def show_frame(self, cont):
         frame = self.frames[cont]
+        self.top_frame = cont #allows program to determine which frame is showing
+        print(self.top_frame.__name__)
         frame.tkraise()
 
-"""
-class Popup(tk.Toplevel):
-    is_tool = False
-
-    def __init__(self):
-        tk.Toplevel.__init__(self)
-"""
-
+#This class creates a popup windows that can display contents of a text file if given or a given message.
+#The contructor can be called with msg = Popup("This is a popup text message")
+#or msg = Popup(os.path.join(*["path","and", "filename.txt"]), is_file=True)
 class Popup(tk.Tk):
     is_tool = False
 
@@ -171,7 +169,19 @@ class Selection_Menu(tk.Frame):
                                 anchor="w")
 
             #used to be self
-            new_button.grid(row=0, column=i, padx=10, pady = 10)
+            new_button.grid(row=1, column=i, padx=10, pady = 10)
+
+        #add a help button that opens the help page if avliable
+        help_button = tk.Button(selection_frame, text="A Help Button", font=DEFAULT_TOOL_FONT, command=self.open_help)
+        help_button.grid(row=0, column=0, sticky="nw")
+
+    def open_help(self):
+        #this opens a page with the help file of the current open page
+        help_location = os.path.join(*["tool_help", app.top_frame.__name__ + ".txt"])
+        if os.path.exists(help_location): #if no file found show a default message
+            help_page = Popup(help_location, is_file=True)
+        else:
+            no_help_page = Popup("Help page was not found please try another page.")
 
 #special class that doesn't have a button in the selection menu
 #this is the welcome screen and cannot be accessed after selecting a tool
@@ -195,7 +205,7 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Drill Tap Chart"
     tool_width = 620
-    tool_height = 650
+    tool_height = 760
 
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
@@ -254,6 +264,7 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         if major_dia == "ERROR" or TPI == "ERROR":
             #################################TODO popup message #######################################
             print("ERROR") #change to popup message indicating error then return
+            error_msg = Popup("There was an error in Drill Tap Chart.", is_file=False)
             return
         else:
             pitch = 1 / TPI
@@ -338,13 +349,11 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         #to handle the case of not large enough drill bit
         return "N/A"
 
-
-
 class Lathe_Speeds(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Lathe Feeds and Speeds"
-    tool_width = 620
-    tool_height = 560
+    tool_width = 550
+    tool_height = 630
 
     speeds_df = pd.read_csv(os.path.join(*["static_data", "Lathe_Speeds", "cutting_speeds.csv"]))
     def __init__(self, parent, controller):
@@ -440,8 +449,8 @@ print(geo)
 app.geometry(geo)
 
 #test popups
-app1 = Popup(os.path.join(*["tool_help", "Drill_Tap_Chart.txt"]), is_file=True)
-app2 = Popup("This is a test and can be used to show error messages", is_file=False)
-app1.lift()
+#app1 = Popup(os.path.join(*["tool_help", "Drill_Tap_Chart.txt"]), is_file=True)
+#app2 = Popup("This is a test and can be used to show error messages", is_file=False)
+#app1.lift()
 #end test popups
 app.mainloop()
