@@ -84,6 +84,7 @@ def check_entry(entry):
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
 class Control(tk.Tk):
     is_tool = False
+    top_frame = None
     def __init__(self):
         tk.Tk.__init__(self)
         container = tk.Frame(self)
@@ -109,7 +110,44 @@ class Control(tk.Tk):
 
     def show_frame(self, cont):
         frame = self.frames[cont]
+        self.top_frame = cont #allows program to determine which frame is showing
+        print(self.top_frame.__name__)
         frame.tkraise()
+
+#This class creates a popup windows that can display contents of a text file if given or a given message.
+#The contructor can be called with msg = Popup("This is a popup text message")
+#or msg = Popup(os.path.join(*["path","and", "filename.txt"]), is_file=True)
+class Popup(tk.Tk):
+    is_tool = False
+
+    def __init__(self, input, is_file=False):
+        tk.Tk.__init__(self)
+        print(input)
+        #file name passed as input so display text file
+        #The files first line should be the title and will be treated as such
+        if is_file:
+            with open(input, 'r') as f:
+                lines = f.readlines()
+                heading = lines[0].split('\n')[0] #remove the newline char
+                self.title(heading)
+                label = tk.Label(self, text=heading, font=TOOL_TITLE_FONT)
+                label.grid(row=0, column=0)
+
+                #print all lines from line 2 to end of the help file
+                for i in range(len(lines) - 1):
+                    label = tk.Label(self, text=lines[i + 1].split('\n')[0], font=DEFAULT_TOOL_FONT)
+                    label.grid(row=i + 1, column=0, sticky='w')
+            i = i + 1; #increment i for button to have correct row
+
+
+        else:
+            i = 0 #i is used for button row determination
+            label = tk.Label(self, text=input, font=DEFAULT_TOOL_FONT)
+            label.grid(row=i, column=0, pady = 10, padx = 10)
+            self.title("Popup")
+
+        button = tk.Button(self, text = "Close", font=BUTTON_FONT, command=self.destroy)
+        button.grid(row=i+1, column=0, pady = 10)
 
 #This is a special class that contains the top frame that contains buttons to select tools
 class Selection_Menu(tk.Frame):
@@ -131,7 +169,19 @@ class Selection_Menu(tk.Frame):
                                 anchor="w")
 
             #used to be self
-            new_button.grid(row=0, column=i, padx=10, pady = 10)
+            new_button.grid(row=1, column=i, padx=10, pady = 10)
+
+        #add a help button that opens the help page if avliable
+        help_button = tk.Button(selection_frame, text="A Help Button", font=DEFAULT_TOOL_FONT, command=self.open_help)
+        help_button.grid(row=0, column=0, sticky="nw")
+
+    def open_help(self):
+        #this opens a page with the help file of the current open page
+        help_location = os.path.join(*["tool_help", app.top_frame.__name__ + ".txt"])
+        if os.path.exists(help_location): #if no file found show a default message
+            help_page = Popup(help_location, is_file=True)
+        else:
+            no_help_page = Popup("Help page was not found please try another page.")
 
 #special class that doesn't have a button in the selection menu
 #this is the welcome screen and cannot be accessed after selecting a tool
@@ -155,7 +205,7 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Drill Tap Chart"
     tool_width = 620
-    tool_height = 650
+    tool_height = 760
 
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
@@ -214,6 +264,7 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         if major_dia == "ERROR" or TPI == "ERROR":
             #################################TODO popup message #######################################
             print("ERROR") #change to popup message indicating error then return
+            error_msg = Popup("There was an error in Drill Tap Chart.", is_file=False)
             return
         else:
             pitch = 1 / TPI
@@ -298,13 +349,11 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         #to handle the case of not large enough drill bit
         return "N/A"
 
-
-
 class Lathe_Speeds(Selection_Menu, tk.Frame):
     is_tool = True
     nice_name = "Lathe Feeds and Speeds"
-    tool_width = 620
-    tool_height = 560
+    tool_width = 550
+    tool_height = 630
 
     speeds_df = pd.read_csv(os.path.join(*["static_data", "Lathe_Speeds", "cutting_speeds.csv"]))
     def __init__(self, parent, controller):
@@ -398,4 +447,10 @@ app = Control()
 geo = str(max_tool_width) + "x" + str(max_tool_height)
 print(geo)
 app.geometry(geo)
+
+#test popups
+#app1 = Popup(os.path.join(*["tool_help", "Drill_Tap_Chart.txt"]), is_file=True)
+#app2 = Popup("This is a test and can be used to show error messages", is_file=False)
+#app1.lift()
+#end test popups
 app.mainloop()
