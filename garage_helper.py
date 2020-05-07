@@ -4,6 +4,8 @@ import os
 from PIL import Image, ImageTk
 import pathlib
 import pandas as pd
+import webbrowser
+import yaml
 
 #returns int max_tool_width, int max_tool height, and a list of dicts for each class in this module with attribute is_tool = True
 #dicts contain "name": the exact name of the class, "obj": the object itself, "nice_name": used for labeling buttons etc.
@@ -130,23 +132,23 @@ class Popup(tk.Tk):
                 lines = f.readlines()
                 heading = lines[0].split('\n')[0] #remove the newline char
                 self.title(heading)
-                label = tk.Label(self, text=heading, font=TOOL_TITLE_FONT)
+                label = tk.Label(self, text=heading, font=conf["font"]["TOOL_TITLE"])
                 label.grid(row=0, column=0)
 
                 #print all lines from line 2 to end of the help file
                 for i in range(len(lines) - 1):
-                    label = tk.Label(self, text=lines[i + 1].split('\n')[0], font=DEFAULT_TOOL_FONT)
+                    label = tk.Label(self, text=lines[i + 1].split('\n')[0], font=conf["font"]["DEFAULT_TOOL"])
                     label.grid(row=i + 1, column=0, sticky='w')
             i = i + 1; #increment i for button to have correct row
 
 
         else:
             i = 0 #i is used for button row determination
-            label = tk.Label(self, text=input, font=DEFAULT_TOOL_FONT)
+            label = tk.Label(self, text=input, font=conf["font"]["DEFAULT_TOOL"])
             label.grid(row=i, column=0, pady = 10, padx = 10)
             self.title("Popup")
 
-        button = tk.Button(self, text = "Close", font=BUTTON_FONT, command=self.destroy)
+        button = tk.Button(self, text = "Close", font=conf["font"]["BUTTON"], command=self.destroy)
         button.grid(row=i+1, column=0, pady = 10)
 
 #This is a special class that contains the top frame that contains buttons to select tools
@@ -156,7 +158,7 @@ class Selection_Menu(tk.Frame):
         tk.Frame.__init__(self,parent)
 
         selection_frame = tk.Frame(self)
-        selection_frame.grid(row=0, column=0)
+        selection_frame.grid(row=1, column=0)
 
         #create a button for each "tool" class in this module
         buttons = []
@@ -164,16 +166,40 @@ class Selection_Menu(tk.Frame):
             #the use of j = i lambda is to differentiate which lambda to use so the correct screen is called
             new_button = tk.Button(selection_frame,
                                 text=selections[i]["nice_name"],
-                                font = BUTTON_FONT,
+                                font = conf["font"]["BUTTON"],
                                 command = lambda j = i: controller.show_frame(selections[j]["obj"]),
                                 anchor="w")
 
             #used to be self
             new_button.grid(row=1, column=i, padx=10, pady = 10)
 
+
+
+        #add a settings/help bar to the top left of the page
+        settings_frame = tk.Frame(self, width=max_tool_width)
+        settings_frame.grid(row=0, column=0, sticky="ew")
+        self.grid_columnconfigure(0, weight=1)
+
+
         #add a help button that opens the help page if avliable
-        help_button = tk.Button(selection_frame, text="A Help Button", font=DEFAULT_TOOL_FONT, command=self.open_help)
-        help_button.grid(row=0, column=0, sticky="nw")
+        help_button = tk.Button(settings_frame, text="A Help Button", font=conf["font"]["DEFAULT_TOOL"], command=self.open_help)
+        help_button.pack(side="left", padx=2)
+
+        settings_button = tk.Button(settings_frame, text="Settings", font=conf["font"]["DEFAULT_TOOL"], command=self.open_settings)
+        settings_button.pack(side="left", padx=2)
+
+        git_button = tk.Button(settings_frame, text="To Git", font=conf["font"]["DEFAULT_TOOL"], command=self.open_github)
+        git_button.pack(side="left", padx=2)
+
+    #open the settings file for the user to edit
+    def open_settings(self):
+        total_path_list = G_H_PATH + ["prog_data", "config.yml"]
+        os.system(os.path.join(*total_path_list))
+        Popup("If you saved any changes please close and restart the program for them to take effect")
+
+    #open the github page in the default browser
+    def open_github(self):
+        webbrowser.open("https://github.com/247typing/garage_helper")
 
     def open_help(self):
         #this opens a page with the help file of the current open page
@@ -190,12 +216,12 @@ class Welcome(Selection_Menu, tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
         tool_frame = tk.Frame(self)
-        tool_frame.grid(row = 1, column = 0)
-        label = tk.Label(tool_frame, text="Welcome Page", font=DEFAULT_TOOL_FONT)
+        tool_frame.grid(row = 2, column = 0)
+        label = tk.Label(tool_frame, text="Welcome Page", font=conf["font"]["DEFAULT_TOOL"])
         label.grid(row=0, column=0)
         label = tk.Label(tool_frame,
                         text="Select the tool you would like to use from the buttons above",
-                        font=DEFAULT_TOOL_FONT,
+                        font=conf["font"]["DEFAULT_TOOL"],
                         wraplength=max_tool_width,
                         justify="left")
 
@@ -210,21 +236,21 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
         self.tool_frame = tk.Frame(self)
-        self.tool_frame.grid(row = 1, column = 0)
+        self.tool_frame.grid(row = 2, column = 0)
 
-        label = tk.Label(self.tool_frame, text=self.nice_name, font=TOOL_TITLE_FONT)
+        label = tk.Label(self.tool_frame, text=self.nice_name, font=conf["font"]["TOOL_TITLE"])
         label.grid(row=0, column=1)
 
-        label = tk.Label(self.tool_frame, text="Pitch (as TPI)", font=DEFAULT_TOOL_FONT)
+        label = tk.Label(self.tool_frame, text="Pitch (as TPI)", font=conf["font"]["DEFAULT_TOOL"])
         label.grid(row=1, column=1)
 
-        self.tap_TPI_entry = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=4)
+        self.tap_TPI_entry = tk.Entry(self.tool_frame, font=conf["font"]["DEFAULT_TOOL"], width=4)
         self.tap_TPI_entry.grid(row=2, column=1)
 
-        label = tk.Label(self.tool_frame, text="Major Diameter", font=DEFAULT_TOOL_FONT)
+        label = tk.Label(self.tool_frame, text="Major Diameter", font=conf["font"]["DEFAULT_TOOL"])
         label.grid(row=4, column=0)
 
-        self.major_dia_entry = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=7)
+        self.major_dia_entry = tk.Entry(self.tool_frame, font=conf["font"]["DEFAULT_TOOL"], width=7)
         self.major_dia_entry.grid(row=5, column=0)
 
         screw_image = Image.open("images\\Drill_Tap_Chart\\input_image.png")
@@ -240,10 +266,10 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         label.grid(row=7, column=0, columnspan=3, pady=15)
 
 
-        calc_button = tk.Button(self.tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.calculate)
+        calc_button = tk.Button(self.tool_frame, text="Calculate", font=conf["font"]["DEFAULT_TOOL"], command=self.calculate)
         calc_button.grid(row=10, column=2, sticky="w")
 
-        clear_button = tk.Button(self.tool_frame, text="Clear", font=DEFAULT_TOOL_FONT, command=self.clear_all)
+        clear_button = tk.Button(self.tool_frame, text="Clear", font=conf["font"]["DEFAULT_TOOL"], command=self.clear_all)
         clear_button.grid(row=10, column=1, sticky="e")
     def calculate(self):
         print(self.major_dia_entry.get())
@@ -295,29 +321,29 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         self.clear_calc() #prevent multiple layers from building up
         self.labels = [] #this list contains all of the labels for the solution
         #this allows for labels to be appended and easily destroyed later to clear the screen
-        self.labels.append(tk.Label(self.tool_frame, text="Used: "+pitch+'"', font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Used: "+pitch+'"', font=conf["font"]["DEFAULT_TOOL"]))
         #assign the last label a position
         self.labels[-1].grid(row=3, column=1)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Used: "+major_dia+'"', font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Used: "+major_dia+'"', font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=6, column=0)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+tap_drill+'"', font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+tap_drill+'"', font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=8, column=0)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+tight_drill+'"', font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+tight_drill+'"', font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=8, column=1)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+loose_drill+'"', font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Actual: "+loose_drill+'"', font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=8, column=2)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+tap_bit, font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+tap_bit, font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=9, column=0)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+tight_bit, font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+tight_bit, font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=9, column=1)
 
-        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+loose_bit, font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Closest Bit: "+loose_bit, font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=9, column=2)
 
     def clear_all(self):
@@ -359,12 +385,12 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent,controller)
         self.tool_frame = tk.Frame(self)
-        self.tool_frame.grid(row = 1, column = 0)
+        self.tool_frame.grid(row = 2, column = 0)
 
-        label = tk.Label(self.tool_frame, text=self.nice_name, font=TOOL_TITLE_FONT)
+        label = tk.Label(self.tool_frame, text=self.nice_name, font=conf["font"]["TOOL_TITLE"])
         label.grid(row=0, column=0, columnspan=2)
 
-        label = tk.Label(self.tool_frame, text="Select Material", font=DEFAULT_TOOL_FONT)
+        label = tk.Label(self.tool_frame, text="Select Material", font=conf["font"]["DEFAULT_TOOL"])
         label.grid(row=1, column=0, columnspan=2)
 
         materials = self.speeds_df["material"].tolist()
@@ -373,7 +399,7 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
         self.selected_mat.set(materials[1])
 
         drop_down = tk.OptionMenu(self.tool_frame, self.selected_mat, *materials)
-        drop_down.configure(font=DEFAULT_TOOL_FONT)
+        drop_down.configure(font=conf["font"]["DEFAULT_TOOL"])
         drop_down.grid(row=2, column=0, columnspan=2)
 
         chuck_image = Image.open(os.path.join(*["images", "Lathe_Speeds", "lathe_chuck.png" ]))
@@ -383,16 +409,16 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
         label.image = photo
         label.grid(row=3, column=0, rowspan=3, pady=15)
 
-        label = tk.Label(self.tool_frame, text="Enter Material Diameter", font=DEFAULT_TOOL_FONT)
+        label = tk.Label(self.tool_frame, text="Enter Material Diameter", font=conf["font"]["DEFAULT_TOOL"])
         label.grid(row=3, column=1, sticky="s")
 
-        self.material_dia = tk.Entry(self.tool_frame, font=DEFAULT_TOOL_FONT, width=4)
+        self.material_dia = tk.Entry(self.tool_frame, font=conf["font"]["DEFAULT_TOOL"], width=4)
         self.material_dia.grid(row=4, column=1, sticky="n")
 
-        calc_button = tk.Button(self.tool_frame, text="Calculate", font=DEFAULT_TOOL_FONT, command=self.calculate)
+        calc_button = tk.Button(self.tool_frame, text="Calculate", font=conf["font"]["DEFAULT_TOOL"], command=self.calculate)
         calc_button.grid(row=7, column=1, sticky="w")
 
-        clear_button = tk.Button(self.tool_frame, text="Clear", font=DEFAULT_TOOL_FONT, command=self.clear_all)
+        clear_button = tk.Button(self.tool_frame, text="Clear", font=conf["font"]["DEFAULT_TOOL"], command=self.clear_all)
         clear_button.grid(row=7, column=0, sticky="e")
 
     def calculate(self):
@@ -410,10 +436,10 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
         self.clear_calc() #prevent multiple layers from building up
         self.labels = []
 
-        self.labels.append(tk.Label(self.tool_frame, text="Diameter Used: "+mat_dia+'"', font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Diameter Used: "+mat_dia+'"', font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=5, column=1, sticky="n")
 
-        self.labels.append(tk.Label(self.tool_frame, text="Calculated RPM: "+RPM, font=DEFAULT_TOOL_FONT))
+        self.labels.append(tk.Label(self.tool_frame, text="Calculated RPM: "+RPM, font=conf["font"]["DEFAULT_TOOL"]))
         self.labels[-1].grid(row=6, column=0)
 
     def clear_all(self):
@@ -432,14 +458,24 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
         #clear the text in the boxes
         self.material_dia.delete(0, 'end')
 
-#TODO needs to be moved to a config file #####################
-BUTTON_FONT = ("arial", 18)
-DEFAULT_TOOL_FONT = ("arial", 16)
-TOOL_TITLE_FONT = ("arial bold", 24)
 
+#######################  WINDOWS SPECIFIC CODE HERE  ########################################
+#G_H_PATH is a list of the path to get to garage_helper script ["C:\", "User", "and", "so", "on"]
+G_H_PATH = os.path.dirname(os.path.realpath(__file__))
+G_H_PATH = G_H_PATH.split("\\")
+G_H_PATH[0] = G_H_PATH[0] + "\\" #add the \ back to C:\ or D:\ etc
+
+#read the config file and store it in a dict conf for easy access
+total_path = G_H_PATH + ["prog_data", "config.yml"]
+with open(os.path.join(*total_path), "r") as f:
+    try:
+        conf = yaml.load(f)
+    except yaml.YAMLError as exc:
+        print(exc)
 
 #find all classes in this module
 max_tool_width, max_tool_height, selections = find_all_tools()
+
 
 
 #launch the app

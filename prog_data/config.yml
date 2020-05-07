@@ -1,0 +1,12 @@
+color:
+  BACKGROUND: powder blue
+font:
+  BUTTON: !!python/tuple
+  - arial
+  - 18
+  DEFAULT_TOOL: !!python/tuple
+  - arial
+  - 16
+  TOOL_TITLE: !!python/tuple
+  - arial bold
+  - 24
