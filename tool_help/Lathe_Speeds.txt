@@ -1,6 +1,6 @@
 Lathe Feeds and Speeds
-This tools is used to calculate cutting speeds on a lathe determined by the
-material to be cut and the diameter of the material. The out put is in Revolutions
+This tool is used to calculate cutting speeds on a lathe determined by the
+material to be cut and the diameter of the material. The output is in revolutions
 per minute (RPM). These will be rounded to the nearest whole number but the
 closest machine speed should be used.
 
@@ -16,7 +16,7 @@ Acceptable formats are:
     Integer such as "1" for a 1 in work piece
     Decimal numbers such as "0.250" or ".25" for a 1/4 in work piece
     Fractions such as "1/4" or "13/64"
-    Mixed numbers such as "1 1/2" for 1.5 in bolt (note the space between 1 and 1/2)
+    Mixed numbers such as "1 1/2" for 1.5 in work piece (note the space between 1 and 1/2)
 
 Output in RPM:
 The output is calculated using the formula:

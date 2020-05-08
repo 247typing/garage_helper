@@ -42,7 +42,7 @@ def find_all_tools():
 #This method takes a single entry and performs basic error checking and division
 #accepted inputs are integers, floats, and fractions with '/' character, as well as mixed numbers
 #where an interger is spearated by a space from a fraction ex: 1 1/2 = 1.5
-#returns float if acceptable other wise returns "ERROR"
+#returns float if acceptable other wise returns "ERROR" or "EMPTY"
 def check_entry(entry):
     #check if entry is empty
     if entry:
@@ -55,7 +55,10 @@ def check_entry(entry):
             if "#" in entry:
                 #search screw_dia.csv for match and return float dia 0.XXX format
                 df = pd.read_csv(os.path.join(*["static_data", "Drill_Tap_Chart", "number_dia.csv"]))
-                entry = df.loc[df.screw_num == entry, "dia_in"].iloc[0]
+                try:
+                    entry = df.loc[df.screw_num == entry, "dia_in"].iloc[0]
+                except IndexError:
+                    return "ERROR"
                 float("{:.3f}".format(round(entry,3)))
                 return entry
             elif "/" in entry:
@@ -78,9 +81,7 @@ def check_entry(entry):
                     return "ERROR"
             else:
                 return "ERROR"
-    else:
-        print("empty")
-    return "ERROR"
+    return "EMPTY"
 
 #The Control code was derived from this tutorial
 #https://pythonprogramming.net/tkinter-depth-tutorial-making-actual-program/
@@ -124,7 +125,7 @@ class Popup(tk.Tk):
 
     def __init__(self, input, is_file=False):
         tk.Tk.__init__(self)
-        print(input)
+        self.iconbitmap(os.path.join(*ICON_PATH))
         #file name passed as input so display text file
         #The files first line should be the title and will be treated as such
         if is_file:
@@ -181,21 +182,31 @@ class Selection_Menu(tk.Frame):
         self.grid_columnconfigure(0, weight=1)
 
 
-        #add a help button that opens the help page if avliable
-        help_button = tk.Button(settings_frame, text="A Help Button", font=conf["font"]["DEFAULT_TOOL"], command=self.open_help)
+
+        #add a help button that opens the help page if available
+        photo_path = G_H_PATH + ["images", "Main", "question_mark.png"]
+        image = Image.open(os.path.join(*photo_path)).resize((25,35))
+        photo = ImageTk.PhotoImage(image)
+        help_button = tk.Button(settings_frame, image=photo, font=conf["font"]["DEFAULT_TOOL"], command=self.open_help)
+        help_button.image = photo
         help_button.pack(side="left", padx=2)
 
-        settings_button = tk.Button(settings_frame, text="Settings", font=conf["font"]["DEFAULT_TOOL"], command=self.open_settings)
+        #settings gear button
+        photo_path = G_H_PATH + ["images", "Main", "gear.png"]
+        image = Image.open(os.path.join(*photo_path)).resize((35,35))
+        photo = ImageTk.PhotoImage(image)
+        settings_button = tk.Button(settings_frame, image=photo, font=conf["font"]["DEFAULT_TOOL"], command=self.open_settings)
+        settings_button.image = photo
         settings_button.pack(side="left", padx=2)
 
-        git_button = tk.Button(settings_frame, text="To Git", font=conf["font"]["DEFAULT_TOOL"], command=self.open_github)
+        git_button = tk.Button(settings_frame, text="GitHub Project", font=conf["font"]["DEFAULT_TOOL"], command=self.open_github)
         git_button.pack(side="left", padx=2)
 
     #open the settings file for the user to edit
     def open_settings(self):
         total_path_list = G_H_PATH + ["prog_data", "config.yml"]
         os.system(os.path.join(*total_path_list))
-        Popup("If you saved any changes please close and restart the program for them to take effect")
+        Popup("If you saved any changes please close and restart the program for them to take effect.")
 
     #open the github page in the default browser
     def open_github(self):
@@ -272,25 +283,26 @@ class Drill_Tap_Chart(Selection_Menu, tk.Frame):
         clear_button = tk.Button(self.tool_frame, text="Clear", font=conf["font"]["DEFAULT_TOOL"], command=self.clear_all)
         clear_button.grid(row=10, column=1, sticky="e")
     def calculate(self):
-        print(self.major_dia_entry.get())
-        print(self.tap_TPI_entry.get())
         TPI = self.tap_TPI_entry.get()
-        #check the entered string is an integer
-        if TPI.isdigit():
-            try:
-                TPI = int(self.tap_TPI_entry.get())
-            except ValueError:
+        if TPI:
+            #check the entered string is an integer
+            if TPI.isdigit():
+                try:
+                    TPI = int(self.tap_TPI_entry.get())
+                except ValueError:
+                    TPI = "ERROR"
+            else:
                 TPI = "ERROR"
         else:
-            TPI = "ERROR"
+            TPI = "EMPTY"
 
         #check dia entry for ints, floats, or fractions
         major_dia = check_entry(self.major_dia_entry.get())
 
         if major_dia == "ERROR" or TPI == "ERROR":
-            #################################TODO popup message #######################################
-            print("ERROR") #change to popup message indicating error then return
-            error_msg = Popup("There was an error in Drill Tap Chart.", is_file=False)
+            error_msg = Popup("There was an error in Drill Tap Chart. Click the question mark above for more help.")
+            return
+        if major_dia == "EMPTY" or TPI == "EMPTY":
             return
         else:
             pitch = 1 / TPI
@@ -423,9 +435,13 @@ class Lathe_Speeds(Selection_Menu, tk.Frame):
 
     def calculate(self):
         mat_dia = check_entry(self.material_dia.get())
-        print(mat_dia)
+        if mat_dia == "ERROR":
+            Popup("There was an error in Lathe Speeds. Click the question mark above for more help.")
+            return
+        elif mat_dia == "EMPTY":
+            return
+
         material = self.selected_mat.get()
-        print(material)
         df = pd.read_csv(os.path.join(*["static_data", "Lathe_Speeds", "cutting_speeds.csv"]))
         cutting_speed = df.loc[df["material"] == material, "surface_feet_per_min"].iloc[0]
         RPM = (cutting_speed * 12) / (3.14 * mat_dia)
@@ -469,14 +485,12 @@ G_H_PATH[0] = G_H_PATH[0] + "\\" #add the \ back to C:\ or D:\ etc
 total_path = G_H_PATH + ["prog_data", "config.yml"]
 with open(os.path.join(*total_path), "r") as f:
     try:
-        conf = yaml.load(f)
+        conf = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.YAMLError as exc:
         print(exc)
 
 #find all classes in this module
 max_tool_width, max_tool_height, selections = find_all_tools()
-
-
 
 #launch the app
 app = Control()
@@ -484,9 +498,10 @@ geo = str(max_tool_width) + "x" + str(max_tool_height)
 print(geo)
 app.geometry(geo)
 
-#test popups
-#app1 = Popup(os.path.join(*["tool_help", "Drill_Tap_Chart.txt"]), is_file=True)
-#app2 = Popup("This is a test and can be used to show error messages", is_file=False)
-#app1.lift()
-#end test popups
+#add app icon to top left corner
+ICON_PATH = G_H_PATH + ["images", "Main", "workbench.ico"]
+app.iconbitmap(os.path.join(*ICON_PATH))
+
+#add main title
+app.title("Garage Helper")
 app.mainloop()
